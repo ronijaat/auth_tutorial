@@ -27,6 +27,7 @@ export const settings = async (values: z.infer<typeof SettingSchmea>) => {
     values.isTwoFactorEnabled = undefined;
   }
 
+  let verificationTokenEmailSent = false;
   if (values.email && values.email !== user.email) {
     const existingUser = await getUserByEmail(values.email);
 
@@ -37,11 +38,11 @@ export const settings = async (values: z.infer<typeof SettingSchmea>) => {
     }
 
     const verificationToken = await generateVerificationToken(values.email);
-    await sendVerificationEmail(values.email, verificationToken.token);
-
-    return {
-      success: 'Verification email sent',
-    };
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token
+    );
+    verificationTokenEmailSent = true;
   }
 
   if (values.password && values.newPassword && dbUser.password) {
@@ -66,6 +67,11 @@ export const settings = async (values: z.infer<typeof SettingSchmea>) => {
 
   // console.log('values', values);
 
+  if (verificationTokenEmailSent) {
+    return {
+      success: 'updated and verification email sent',
+    };
+  }
   return {
     success: 'updated',
   };
