@@ -12,6 +12,7 @@ import {
 } from '@/lib/tokens';
 import { DEFAULT_LOGIN_REDIRECT } from '@/route';
 import { LoginSchema } from '@/schemas';
+import bcrypt from 'bcryptjs';
 import { AuthError } from 'next-auth';
 import * as z from 'zod';
 
@@ -47,6 +48,13 @@ export const login = async (
 
     return {
       success: 'Email not verified! Confirmation email sent!',
+    };
+  }
+
+  const passwordMatch = await bcrypt.compare(password, existingUser.password);
+  if (!passwordMatch) {
+    return {
+      error: 'Invalid credentials!',
     };
   }
 
