@@ -42,7 +42,7 @@ const SettingPage = () => {
 
   const [isPending, startTransition] = useTransition();
 
-  console.log('user', user);
+  // console.log('user', user);
 
   const form = useForm<z.infer<typeof SettingSchmea>>({
     resolver: zodResolver(SettingSchmea),
@@ -205,7 +205,7 @@ const SettingPage = () => {
                           <Switch
                             disabled={isPending}
                             checked={field.value}
-                            onChange={field.onChange}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
                       </FormItem>
