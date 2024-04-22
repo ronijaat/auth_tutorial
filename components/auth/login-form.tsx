@@ -24,6 +24,7 @@ import { CardWrapper } from './card-wrapper';
 
 export const LoginForm = () => {
   const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
   const urlError =
     searchParams.get('error') === 'OAuthAccountNotLinked'
       ? 'This account is not linked to any user. Please login with your email and password.'
@@ -41,7 +42,7 @@ export const LoginForm = () => {
     setError('');
     setSucess('');
     startTransition(() => {
-      login(values)
+      login(values, callbackUrl ?? undefined)
         .then((data) => {
           if (data?.error) {
             form.reset();

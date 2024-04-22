@@ -20,6 +20,7 @@ export const getUserById = async (id: string) => {
       },
     });
   } catch (err) {
+    console.log(err);
     return null;
   }
 };

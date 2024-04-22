@@ -1,25 +1,23 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import NextAuth, { type DefaultSession } from 'next-auth';
 import authConfig from './auth.config';
+import { getAccountByUserId } from './data/account';
 import { getTwoFactorTokenByUserId } from './data/two-factor-confirmation';
 import { getUserById } from './data/user';
 import { db } from './lib/db';
+
+export type ExtendedUser = DefaultSession['user'] & {
+  role: 'ADMIN' | 'USER';
+  isTwoFactorEnabled: boolean;
+  isOAuth: boolean;
+};
 
 declare module 'next-auth' {
   /**
    * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
    */
   interface Session {
-    user: {
-      /** The user's postal address. */
-      role: 'ADMIN' | 'USER';
-      /**
-       * By default, TypeScript merges new interface properties and overwrites existing ones.
-       * In this case, the default session user properties will be overwritten,
-       * with the new ones defined above. To keep the default session user properties,
-       * you need to add them back into the newly declared interface.
-       */
-    } & DefaultSession['user'];
+    user: ExtendedUser;
   }
 }
 
@@ -64,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
     async session({ token, session }) {
-      console.log('session token', token);
+      // console.log('session token', token);
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
@@ -74,17 +72,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: token.role as 'ADMIN' | 'USER',
         };
       }
+
+      if (session.user) {
+        session.user = {
+          ...session.user,
+          isTwoFactorEnabled: token.isTwoFactorEnabled as boolean,
+        };
+      }
+
+      if (session.user) {
+        session.user = {
+          ...session.user,
+          email: token.email as string,
+          name: token.name as string,
+          isOAuth: token.isOAuth as boolean,
+        };
+      }
       return session;
     },
 
     async jwt({ token }) {
       // console.log(token);
+      // console.log('i am here');
       if (!token.sub) return token;
 
       const existingUser = await getUserById(token.sub);
       if (!existingUser) return token;
 
+      const existingAccount = await getAccountByUserId(existingUser.id);
+      // console.log('existingAccount', existingAccount);
+      token.isOAuth = !!existingAccount;
+
+      token.name = existingUser.name;
+      token.email = existingUser.email;
       token.role = existingUser.role;
+      token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
       return token;
     },
   },
